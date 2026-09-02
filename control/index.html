@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  >
+
+  <title>Mía XV | Control de acceso</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+
+    *{
+      box-sizing:border-box;
+    }
+
+    html,
+    body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+    }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(
+          circle at 50% 0%,
+          #11213f 0%,
+          #071426 42%,
+          #020712 100%
+        );
+      color:#fff;
+      font-family:Arial,sans-serif;
+    }
+
+    .app{
+      width:100%;
+      max-width:520px;
+      min-height:100vh;
+      margin:0 auto;
+
+      padding:
+        max(24px, env(safe-area-inset-top))
+        16px
+        max(28px, env(safe-area-inset-bottom));
+    }
+
+    .header{
+      text-align:center;
+      margin-bottom:22px;
+    }
+
+    .mini{
+      color:#efd28d;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:3px;
+    }
+
+    h1{
+      margin:10px 0 7px;
+      font-family:Georgia, serif;
+      font-size:36px;
+      line-height:1.05;
+      font-weight:normal;
+    }
+
+    .sub{
+      color:#b7c2d0;
+      font-size:15px;
+    }
+
+    .scanner-card{
+      width:100%;
+      padding:16px;
+      border:1px solid rgba(231,201,128,.45);
+      border-radius:24px;
+      background:#091a31;
+      box-shadow:0 18px 50px rgba(0,0,0,.28);
+    }
+
+    #reader{
+      width:100%;
+      min-height:350px;
+      overflow:hidden;
+      border-radius:18px;
+      background:#020712;
+    }
+
+    #reader video{
+      width:100% !important;
+      min-height:350px !important;
+      object-fit:cover;
+      border-radius:16px;
+    }
+
+    .estado{
+      margin-top:14px;
+      text-align:center;
+      color:#b0bccb;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .btn{
+      width:100%;
+      min-height:64px;
+      margin-top:16px;
+      border:none;
+      border-radius:18px;
+      font-size:16px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .btn-principal{
+      background:
+        linear-gradient(
+          180deg,
+          #f4dc9c,
+          #d4ad5b
+        );
+      color:#061225;
+    }
+
+    .btn-secundario{
+      background:#102744;
+      color:#efd28d;
+      border:1px solid rgba(231,201,128,.28);
+    }
+
+    .manual{
+      display:none;
+      margin-top:16px;
+      padding:18px;
+      border-radius:20px;
+      background:#091a31;
+      border:1px solid rgba(231,201,128,.22);
+    }
+
+    .manual label{
+      display:block;
+      color:#efd28d;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:1.8px;
+      margin-bottom:10px;
+      text-align:center;
+    }
+
+    .manual input{
+      width:100%;
+      min-height:56px;
+      padding:14px 16px;
+      border:1px solid rgba(231,201,128,.45);
+      border-radius:14px;
+      background:#061225;
+      color:#fff;
+      font-size:19px;
+      text-align:center;
+      text-transform:uppercase;
+      outline:none;
+    }
+
+    .manual input:focus{
+      border-color:#efd28d;
+      box-shadow:0 0 0 3px rgba(239,210,141,.08);
+    }
+
+    .footer{
+      margin-top:22px;
+      text-align:center;
+      color:#7d8ca0;
+      font-size:12px;
+      letter-spacing:.6px;
+    }
+
+    .overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+
+      background:
+        radial-gradient(
+          circle at center,
+          #0c223e 0%,
+          #061225 70%
+        );
+
+      text-align:center;
+    }
+
+    .spinner{
+      width:78px;
+      height:78px;
+      margin:0 auto 28px;
+      border:4px solid rgba(239,210,141,.14);
+      border-top-color:#efd28d;
+      border-radius:50%;
+      animation:girar .75s linear infinite;
+    }
+
+    .overlay-title{
+      margin-top:10px;
+      font-family:Georgia, serif;
+      font-size:30px;
+    }
+
+    .overlay-text{
+      margin-top:10px;
+      color:#b7c2d0;
+      font-size:14px;
+    }
+
+    @keyframes girar{
+      from{
+        transform:rotate(0deg);
+      }
+
+      to{
+        transform:rotate(360deg);
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+
+    <div class="header">
+
+      <div class="mini">
+        ✦ MÍA XV ✦
+      </div>
+
+      <h1>
+        Control de acceso
+      </h1>
+
+      <div class="sub">
+        Escaneá el QR del invitado
+      </div>
+
+    </div>
+
+
+    <div class="scanner-card">
+
+      <div id="reader"></div>
+
+      <button
+        id="btnCamara"
+        class="btn btn-principal"
+        onclick="iniciarCamara()"
+      >
+        ACTIVAR CÁMARA
+      </button>
+
+      <div
+        id="estadoCamara"
+        class="estado"
+      >
+        Tocá “Activar cámara” y permití el acceso cuando el navegador lo solicite.
+      </div>
+
+    </div>
+
+
+    <button
+      class="btn btn-secundario"
+      onclick="mostrarManual()"
+    >
+      INGRESAR CÓDIGO MANUALMENTE
+    </button>
+
+
+    <div
+      id="manual"
+      class="manual"
+    >
+
+      <label>
+        CÓDIGO DEL PASE
+      </label>
+
+      <input
+        id="codigoManual"
+        type="text"
+        placeholder="MIA-XV-XXXXXX"
+        autocomplete="off"
+      >
+
+      <button
+        class="btn btn-principal"
+        onclick="validarManual()"
+      >
+        BUSCAR INVITADO
+      </button>
+
+    </div>
+
+
+    <div class="footer">
+      CONTROL DE ACCESO · 17 OCT 2026
+    </div>
+
+  </div>
+
+
+  <div
+    id="overlay"
+    class="overlay"
+  >
+
+    <div>
+
+      <div class="spinner"></div>
+
+      <div class="mini">
+        ✦ MÍA XV ✦
+      </div>
+
+      <div class="overlay-title">
+        Pase detectado
+      </div>
+
+      <div class="overlay-text">
+        Buscando invitado...
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    const URL_APP =
+      "https://script.google.com/macros/s/AKfycbwlopn41H5ufZ3c7h4Mek0zxmQg-Izo4JKJyr28mGmdD7nM6DLXoMTAs65U-PPPzUPf/exec";
+
+
+    let scannerQR = null;
+
+    let procesando = false;
+
+
+    async function iniciarCamara() {
+
+      const boton =
+        document.getElementById(
+          "btnCamara"
+        );
+
+
+      const estado =
+        document.getElementById(
+          "estadoCamara"
+        );
+
+
+      boton.disabled =
+        true;
+
+
+      boton.textContent =
+        "INICIANDO CÁMARA...";
+
+
+      estado.textContent =
+        "Solicitando acceso a la cámara...";
+
+
+      try {
+
+
+        scannerQR =
+          new Html5Qrcode(
+            "reader"
+          );
+
+
+        const config = {
+
+          fps: 12,
+
+          qrbox: function(
+            ancho,
+            alto
+          ) {
+
+            const lado =
+              Math.floor(
+                Math.min(
+                  ancho,
+                  alto
+                ) *
+                0.72
+              );
+
+
+            return {
+
+              width: lado,
+
+              height: lado
+
+            };
+
+          },
+
+          aspectRatio: 1.0
+
+        };
+
+
+        await scannerQR.start(
+
+          {
+            facingMode:
+              "environment"
+          },
+
+          config,
+
+          codigoDetectado,
+
+          function() {
+
+          }
+
+        );
+
+
+        boton.style.display =
+          "none";
+
+
+        estado.textContent =
+          "Cámara activa · Acercá el QR al recuadro";
+
+
+      } catch(error) {
+
+
+        console.error(
+          error
+        );
+
+
+        boton.disabled =
+          false;
+
+
+        boton.textContent =
+          "REINTENTAR CÁMARA";
+
+
+        estado.innerHTML =
+          "No se pudo activar la cámara.<br>" +
+          "Revisá los permisos de Chrome.";
+
+      }
+
+    }
+
+
+    async function codigoDetectado(
+      texto
+    ) {
+
+      if (procesando) {
+
+        return;
+
+      }
+
+
+      procesando =
+        true;
+
+
+      if (
+        navigator.vibrate
+      ) {
+
+        navigator.vibrate(
+          120
+        );
+
+      }
+
+
+      document
+        .getElementById(
+          "overlay"
+        )
+        .style.display =
+          "flex";
+
+
+      try {
+
+        if (scannerQR) {
+
+          await scannerQR.pause(
+            true
+          );
+
+        }
+
+      } catch(error) {
+
+      }
+
+
+      const codigo =
+        extraerCodigo(
+          texto
+        );
+
+
+      if (!codigo) {
+
+        document
+          .getElementById(
+            "overlay"
+          )
+          .style.display =
+            "none";
+
+
+        alert(
+          "Este QR no corresponde a una invitación de Mía XV."
+        );
+
+
+        procesando =
+          false;
+
+
+        try {
+
+          await scannerQR.resume();
+
+        } catch(error) {
+
+        }
+
+
+        return;
+
+      }
+
+
+      abrirControl(
+        codigo
+      );
+
+    }
+
+
+    function extraerCodigo(
+      texto
+    ) {
+
+      const valor =
+        String(
+          texto ||
+          ""
+        )
+          .trim();
+
+
+      try {
+
+        const url =
+          new URL(
+            valor
+          );
+
+
+        const codigo =
+          url.searchParams.get(
+            "pass"
+          );
+
+
+        if (codigo) {
+
+          return codigo.trim();
+
+        }
+
+      } catch(error) {
+
+      }
+
+
+      if (
+        valor
+          .toUpperCase()
+          .startsWith(
+            "MIA-XV-"
+          )
+      ) {
+
+        return valor
+          .toUpperCase();
+
+      }
+
+
+      return "";
+
+    }
+
+
+    function abrirControl(
+      codigo
+    ) {
+
+      const destino =
+        URL_APP +
+        "?pass=" +
+        encodeURIComponent(
+          codigo
+        ) +
+        "&control=1";
+
+
+      window.location.href =
+        destino;
+
+    }
+
+
+    function mostrarManual() {
+
+      const caja =
+        document.getElementById(
+          "manual"
+        );
+
+
+      const visible =
+        caja.style.display ===
+        "block";
+
+
+      caja.style.display =
+        visible
+          ?
+          "none"
+          :
+          "block";
+
+
+      if (!visible) {
+
+        setTimeout(
+          function() {
+
+            document
+              .getElementById(
+                "codigoManual"
+              )
+              .focus();
+
+          },
+          150
+        );
+
+      }
+
+    }
+
+
+    function validarManual() {
+
+      const codigo =
+        document
+          .getElementById(
+            "codigoManual"
+          )
+          .value
+          .trim()
+          .toUpperCase();
+
+
+      if (!codigo) {
+
+        alert(
+          "Ingresá el código del pase."
+        );
+
+        return;
+
+      }
+
+
+      document
+        .getElementById(
+          "overlay"
+        )
+        .style.display =
+          "flex";
+
+
+      abrirControl(
+        codigo
+      );
+
+    }
+
+  </script>
+
+</body>
+
+</html>
